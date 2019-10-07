@@ -1,0 +1,112 @@
+
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<Script file="main.lua"/>
+
+	<Frame name="ManaTimerClassicFrame" hidden="false" frameStrata="BACKGROUND" enableMouse="true" movable="true" parent="UIParent">
+		<Size>
+			<AbsDimension x="116" y="14"/>
+		</Size>
+
+		<Anchors>
+			<Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+				<Offset>
+					<AbsDimension x="0" y="-10"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+
+		<Layers>
+			<!-- Level OVERLAY so frame is over all other items -->
+			<Layer level="OVERLAY">
+				<Texture name="ManaTimerClassicBorder" file="Interface\Tooltips\UI-StatusBar-Border"/>
+			</Layer>
+
+			<Layer level="BACKGROUND">
+				<Texture name="ManaTimerClassicManaBackground">
+					<Size>
+						<AbsDimension x="114" y="11"/>
+					</Size>
+
+					<Anchors>
+						<Anchor point="CENTER" relativeTo="$Parent" relativePoint="CENTER"/>
+					</Anchors>
+					<Color r="0" b="0" g="0" a="0.5"/>
+				</Texture>
+			</Layer>
+
+			<Layer level="OVERLAY">
+				<FontString name="ManaTimerClassicTextCenter" inherits="GameFontNormalSmall" wraponspaces="true">
+					<Size>kk
+						<AbsDimension x="0" y="60"/>
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER" relativeTo="$Parent" relativePoint="CENTER"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+
+		<TitleRegion setAllPoints="true"/>
+
+		<Frames>
+			<StatusBar name="ManaTimerClassicMana" movable="true" inherits="TextStatusBar">
+				<Size>
+					<AbsDimension x="110" y="8"/>
+				</Size>
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="$Parent" relativePoint="CENTER">
+						<Offset>
+							<AbsDimension x="0" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+
+				<Layers>
+				</Layers>
+
+				<BarTexture name="$parentTex" file="Interface\TargetingFrame\UI-StatusBar"/>
+				<BarColor r="1" g="1" b="1"/>
+
+				<Scripts>
+					<OnLoad>
+						self:SetFrameLevel("1");
+					</OnLoad>
+					<OnMouseDown>
+						if button == "LeftButton" and not self.isMoving then
+						self:GetParent():StartMoving();
+						self.isMoving = true;
+						end
+					</OnMouseDown>
+					<OnMouseUp>
+						if button == "LeftButton" and self.isMoving then
+						self:GetParent():StopMovingOrSizing();
+						self.isMoving = false;
+						end
+					</OnMouseUp>
+					<OnHide>
+						if self.isMoving then
+						self:GetParent():StopMovingOrSizing();
+						self.isMoving = false;
+						end
+					</OnHide>
+				</Scripts>
+			</StatusBar>
+		</Frames>
+
+		<Scripts>
+			<OnLoad>
+				self:RegisterForDrag("LeftButton");
+			</OnLoad>
+			<OnDragStart>self:StartMoving();</OnDragStart>
+			<OnDragStop>self:StopMovingOrSizing();</OnDragStop>
+		</Scripts>
+	</Frame>
+
+	<Frame name="ManaTimerClassicUpdateFrame">
+		<Scripts>
+			<OnLoad>ManaTimerClassic_OnLoad();</OnLoad>
+			<OnEvent>ManaTimerClassic_OnEvent(self, event, ...);</OnEvent>
+			<OnUpdate function="ManaTimerClassic_OnUpdate" />
+		</Scripts>
+	</Frame>
+</Ui>

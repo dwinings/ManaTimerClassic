@@ -1,0 +1,6 @@
+## Interface 11302
+## Title: Mana Timer Classic
+## Author: Wisp
+## Version 0.01
+
+main.xml
