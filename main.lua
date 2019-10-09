@@ -10,12 +10,14 @@ local count = 0
 local full_mana = false
 local bar_full = true
 local power_type = 'MANA'
-
+local regen = 0
+local main_bar = nil
+local pause_bar = nil
 
 function ManaTimerClassic_OnLoad(self)
-	ManaTimerClassicUpdateFrame:RegisterEvent("UNIT_POWER_UPDATE")
-	ManaTimerClassicUpdateFrame:RegisterEvent("UNIT_DISPLAYPOWER")
-	ManaTimerClassicUpdateFrame:RegisterEvent("ADDON_LOADED")
+	ManaTimerClassic_UpdateFrame:RegisterEvent("UNIT_POWER_UPDATE")
+	ManaTimerClassic_UpdateFrame:RegisterEvent("UNIT_DISPLAYPOWER")
+	ManaTimerClassic_UpdateFrame:RegisterEvent("ADDON_LOADED")
 end
 
 function ManaTimerClassic_OnUpdate(self, elapsed)
@@ -50,15 +52,28 @@ function ManaTimerClassic_OnUpdate(self, elapsed)
 	end
 
 	if not bar_full and not (mana == max_mana) then
-		ManaTimerClassicMana:SetValue(1 - (TimeTillNextRegen()/bar_max))
+		ManaTimerClassic_MainBar:SetValue(1 - (TimeTillNextRegen()/bar_max))
+		pause_bar:SetValue(1 - (spell_pause_timer / 5))
 	else 
-		ManaTimerClassicMana:SetValue(1)
+		ManaTimerClassic_MainBar:SetValue(1)
+		pause_bar:SetValue(1)
 	end
 end
 
 function ManaTimerClassic_DidLoad()
-	ManaTimerClassicMana:SetMinMaxValues(0, 1)
-	ManaTimerClassicMana:SetValue(1)
+	main_bar = ManaTimerClassic_Container.MainBar
+	pause_bar = ManaTimerClassic_Container.PauseBar
+	main_bar:SetMinMaxValues(0, 1)
+	main_bar:SetValue(1)
+	pause_bar:SetMinMaxValues(0, 1)
+	pause_bar:SetValue(1)
+
+	if ManaTimerClassic_Options == nil then
+		ManaTimerClassic_Options = {}
+    end
+
+	ManaTimerClassic_UpdateRegen()
+	ManaTimerClassic_InitializeOptions()
 	ShowBarIfApplicable()
 end
 
@@ -67,11 +82,15 @@ function ManaTimerClassic_OnEvent(self, event, ...)
 		local unit_id, _ = ...
 
 		if unit_id == "player" then
+            ShowBarIfApplicable()
+
 			local new_mana = UnitPower("player")
 			local max_mana = UnitPowerMax("player")
-			local regen, _ = GetPowerRegen("player")
-			regen = regen * 2
+
+			-- This if statement is because our regen is shown as 0 if we are in combat.BCB
 			local player_class, _, _= UnitClass("player")
+
+			ManaTimerClassic_UpdateRegen()
 
 			if new_mana < old_mana then
 				spell_pause_timer = 5
@@ -85,7 +104,10 @@ function ManaTimerClassic_OnEvent(self, event, ...)
 			old_mana = new_mana
 		end
 	elseif event == "ADDON_LOADED" then
-		ManaTimerClassic_DidLoad()
+        local name, _ = ...
+    	if name == "ManaTimerClassic" then
+			ManaTimerClassic_DidLoad()
+		end
 	elseif event == "UNIT_DISPLAYPOWER" then
 		_, power_type = UnitPowerType("player")
 		ShowBarIfApplicable()
@@ -98,18 +120,29 @@ function ResetBar(time)
 	bar_max = math.max(TimeTillNextRegen(), 2)
 end
 
+function ManaTimerClassic_OnOptionsChanged()
+	ShowBarIfApplicable()
+	ManaTimerClassic_UpdateRegen(regen)
+end
+
 function ShowBarIfApplicable()
-	_, power_type = UnitPowerType("player")
+	power_type = select(2, UnitPowerType("player"))
 	if power_type == 'MANA' then
-		ManaTimerClassicMana:SetStatusBarColor(0, 0, 1, 1)
+		ManaTimerClassic_MainBar:SetStatusBarColor(0, 0, 1, 1)
 	elseif power_type == 'ENERGY' then
-		ManaTimerClassicMana:SetStatusBarColor(1, 1, 0.33, 1)
+		ManaTimerClassic_MainBar:SetStatusBarColor(1, 1, 0.33, 1)
 	else
-		ManaTimerClassicFrame:Hide()
+		ManaTimerClassic_Container:Hide()
 		return
 	end
 
-	ManaTimerClassicFrame:Show()
+	ManaTimerClassic_Container:Show()
+
+	if ManaTimerClassic_Options["SeparateSpellPause"] == true and power_type == 'MANA' then
+		pause_bar:Show()
+    else
+        pause_bar:Hide()
+	end
 end
 
 function TimeTillNextRegen()
@@ -121,6 +154,10 @@ function TimeTillNextRegen()
 	-- the same number of spells! This means that you'll have to wait until t=8 to have another
 	-- mana tick. That behavior is what this loop is tracking.
 
+	if ManaTimerClassic_Options["SeparateSpellPause"] == true then
+		return time_till_next_mana
+	end
+
 	local speculative_time = time_till_next_mana
 	if power_type == 'MANA' then
 		while speculative_time < spell_pause_timer do
@@ -129,4 +166,17 @@ function TimeTillNextRegen()
 	end
 
 	return speculative_time
+end
+
+function ManaTimerClassic_UpdateRegen()
+	local new_regen, _ = GetPowerRegen("player")
+	if (math.floor(new_regen) ~= 0) then
+		regen = new_regen * 2
+	end
+
+	if ManaTimerClassic_Options["ShowRegenAmount"] == true then
+		main_bar.Text:SetText(" +" ..math.floor(regen))
+	else
+		main_bar.Text:SetText("")
+	end
 end
