@@ -1,7 +1,7 @@
-## Interface 11302
+## Interface: 11302
 ## Title: Mana Timer Classic
 ## Author: Wisp
-## Version: 0.05
+## Version: 0.07
 ## SavedVariablesPerCharacter: ManaTimerClassic_Options
 
 main.xml

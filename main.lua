@@ -94,12 +94,12 @@ function ManaTimerClassic_OnEvent(self, event, ...)
 
 			if new_mana < old_mana then
 				spell_pause_timer = 5
-				ResetBar()
+				ManaTimerClassic_ResetBar()
 			end
 			if new_mana > old_mana and (new_mana - old_mana) - regen < 5 then
 				time_till_next_mana = 2
 				-- print("Hey, this looks like a regen tick.")
-				ResetBar()
+				ManaTimerClassic_ResetBar()
 			end
 			old_mana = new_mana
 		end
@@ -111,11 +111,12 @@ function ManaTimerClassic_OnEvent(self, event, ...)
 	elseif event == "UNIT_DISPLAYPOWER" then
 		_, power_type = UnitPowerType("player")
 		ShowBarIfApplicable()
-		ResetBar()
+		ManaTimerClassic_UpdateRegen()
+		ManaTimerClassic_ResetBar()
 	end
 end
 
-function ResetBar(time)
+function ManaTimerClassic_ResetBar(time)
 	bar_full = false
 	bar_max = math.max(TimeTillNextRegen(), 2)
 end
